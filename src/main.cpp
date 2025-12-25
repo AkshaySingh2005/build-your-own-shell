@@ -1,10 +1,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib>      
-#include <sstream>      
-#include <unistd.h>//POSIX  
-#include <sys/stat.h>   
+#include <cstdlib>      // getenv
+#include <sstream>      // stringstream
+#include <unistd.h>     //POSIX // fork, execv, access 
+#include <sys/wait.h>   // waitpid
+#include <cstring>      // strerror
+#include <errno.h>      // errno
 
 bool is_builtin(const std::string& cmd) {
     return cmd == "exit" || cmd == "echo" || cmd == "type";
@@ -27,6 +29,65 @@ std::vector<std::string> split_path(const std::string& path) {
 
     return dirs;
 }
+
+
+// Shell → fork → child execs → parent waits
+void run_program(const std::string& input){
+    std::vector<std::string>args;
+    std::stringstream ss(input);
+    std::string token;
+
+    while(ss >> token){ //default delimitter ' ' -> space
+        args.push_back(token);
+    }
+
+    if(args.empty()){
+        return;
+    }
+
+    const std::string& program = args[0];
+
+    const char* path_env = std::getenv("PATH");
+    if (!path_env) {
+        return;
+    }
+    std::vector<std::string> path_dirs = split_path(path_env);
+
+    for (const auto& dir : path_dirs) {
+        std::string full_path = dir + "/" + program;
+
+        if (is_executable(full_path)) {
+           
+            pid_t pid = fork();
+            // fork() creates a NEW process
+            // 1. Parent shell
+            // 2. Child process (copy of shell)
+            
+            if(pid < 0){
+                std::cout << "fork failed: " << strerror(errno) << std::endl;
+                continue;
+            }
+            if(pid == 0){
+                std::vector<char*> argv;
+                for (auto& arg : args) {
+                    argv.push_back(const_cast<char*>(arg.c_str()));
+                }
+                argv.push_back(nullptr); // exec REQUIRES null-terminated argv
+
+                execv(full_path.c_str(), argv.data());
+
+                std::cout << program << ": command not found" << std::endl;
+                _exit(1);
+            }
+            else{
+                waitpid(pid, nullptr, 0);
+            }
+            return;
+        }
+    }
+    std::cout << program << ": command not found" << std::endl;
+}
+
 
 void handle_type(const std::string& command) {
     if (is_builtin(command)) {
@@ -81,7 +142,7 @@ int main() {
             handle_type(cmd);
         }
         else {
-            std::cout << input << ": command not found" << std::endl;
+            run_program(input);
         }
     }
 
