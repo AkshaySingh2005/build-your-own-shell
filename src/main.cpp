@@ -7,9 +7,11 @@
 #include <sys/wait.h>   // waitpid
 #include <cstring>      // strerror
 #include <errno.h>      // errno
+#include <limits.h>     // PATHMAX 
+
 
 bool is_builtin(const std::string& cmd) {
-    return cmd == "exit" || cmd == "echo" || cmd == "type";
+    return cmd == "exit" || cmd == "echo" || cmd == "type" || cmd == "pwd";
 }
 
 bool is_executable(const std::string& path) {
@@ -118,6 +120,18 @@ void handle_type(const std::string& command) {
     std::cout << command << ": not found" << std::endl;
 }
 
+
+void pwd_cmd(){
+    char buf[PATH_MAX];
+
+    if(getcwd(buf,sizeof(buf)) != nullptr){
+        std::cout<<buf<<std::endl;
+    }
+    else{
+        std::cerr<<"pwd: "<<std::strerror(errno)<<std::endl;
+    }
+}
+
 int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
@@ -140,6 +154,9 @@ int main() {
         else if (input.rfind("type ", 0) == 0) {
             std::string cmd = input.substr(5);
             handle_type(cmd);
+        }
+        else if(input=="pwd"){
+            pwd_cmd();
         }
         else {
             run_program(input);
