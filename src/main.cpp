@@ -132,14 +132,24 @@ void pwd_cmd(){
     }
 }
 
-void cd_cmd(const std::string& path){
-    //case 1 : absolute path
-    int res = chdir(path.c_str());
+void cd_cmd(const std::string& path) {
+    std::string target;
 
-    if (res == -1) {
-        std::cout << "cd: " << path << ": No such file or directory" << std::endl;
+    if (path.empty() || path == "~") {
+        const char* home = std::getenv("HOME");
+        if (!home) {
+            std::cout << "cd: HOME not set" << std::endl;
+            return;
+        }
+        target = home;
+    }
+    else {
+        target = path;
     }
 
+    if (chdir(target.c_str()) == -1) {
+        std::cout << "cd: " << target << ": No such file or directory" << std::endl;
+    }
 }
 
 
