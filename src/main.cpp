@@ -11,7 +11,7 @@
 
 
 bool is_builtin(const std::string& cmd) {
-    return cmd == "exit" || cmd == "echo" || cmd == "type" || cmd == "pwd";
+    return cmd == "exit" || cmd == "echo" || cmd == "type" || cmd == "pwd" || cmd=="cd";
 }
 
 bool is_executable(const std::string& path) {
@@ -132,6 +132,17 @@ void pwd_cmd(){
     }
 }
 
+void cd_cmd(const std::string& path){
+    //case 1 : absolute path
+    int res = chdir(path.c_str());
+
+    if (res == -1) {
+        std::cout << "cd: " << path << ": No such file or directory" << std::endl;
+    }
+
+}
+
+
 int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
@@ -157,6 +168,10 @@ int main() {
         }
         else if(input=="pwd"){
             pwd_cmd();
+        }
+        else if(input.rfind("cd ", 0) == 0){
+            std::string path = input.substr(3);
+            cd_cmd(path);
         }
         else {
             run_program(input);
