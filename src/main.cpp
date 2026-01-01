@@ -101,7 +101,7 @@ void run_program(const std::string& input){
                 for (auto& arg : args) {
                     argv.push_back(const_cast<char*>(arg.c_str()));
                 }
-                argv.push_back(nullptr); // exec REQUIRES null-terminated argv
+                argv.push_back(nullptr); 
 
                 execv(full_path.c_str(), argv.data());
 
@@ -181,29 +181,15 @@ void cd_cmd(const std::string& path) {
 
 
 void echo_cmd(const std::string& s){
-    std::string result;
-    bool in_single_quote = false;
-    bool last_was_space = false;
-
-    for (char c : s) {
-        if (c == '\'') {
-            in_single_quote = !in_single_quote;
-            continue; 
-        }
-
-        if (!in_single_quote && c == ' ') {
-            if (!last_was_space) {
-                result += ' ';
-                last_was_space = true;
-            }
-        }
-        else {
-            result += c;
-            last_was_space = false;
+    std::vector<std::string> args = parse_args(s);
+    
+    for (size_t i = 0; i < args.size(); ++i) {
+        std::cout << args[i];
+        if (i < args.size() - 1) {
+            std::cout << ' ';
         }
     }
-
-    std::cout << result << std::endl;
+    std::cout << std::endl;
 }
 
 
