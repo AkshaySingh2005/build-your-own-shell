@@ -17,7 +17,6 @@ bool is_builtin(const std::string& cmd) {
 bool is_executable(const std::string& path) {
     return access(path.c_str(), X_OK) == 0; // 0 -> executable
                                             // -1 -> non-executable file
-
 }
 
 std::vector<std::string> split_path(const std::string& path) {
@@ -32,17 +31,45 @@ std::vector<std::string> split_path(const std::string& path) {
     return dirs;
 }
 
+std::vector<std::string> parse_args(const std::string& input) {
+    std::vector<std::string> args;
+    std::string current;
+    bool in_single_quote = false;
+    bool in_double_quote = false;
+
+    for (size_t i = 0; i < input.length(); ++i) {
+        char c = input[i];
+
+        if (c == '\'' && !in_double_quote) {
+            in_single_quote = !in_single_quote;
+        }
+        else if (c == '"' && !in_single_quote) {
+            in_double_quote = !in_double_quote;
+        }
+        else if (c == ' ' && !in_single_quote && !in_double_quote) {
+            if (!current.empty()) {
+                args.push_back(current);
+                current.clear();
+            }
+        }
+        else {
+            current += c;
+        }
+    }
+
+    if (!current.empty()) {
+        args.push_back(current);
+    }
+
+    return args;
+}
+
+
 
 // Shell → fork → child execs → parent waits
 void run_program(const std::string& input){
-    std::vector<std::string>args;
-    std::stringstream ss(input);
-    std::string token;
-
-    while(ss >> token){ //default delimitter ' ' -> space
-        args.push_back(token);
-    }
-
+    std::vector<std::string>args = parse_args(input);
+    
     if(args.empty()){
         return;
     }
@@ -153,6 +180,34 @@ void cd_cmd(const std::string& path) {
 }
 
 
+void echo_cmd(const std::string& s){
+    std::string result;
+    bool in_single_quote = false;
+    bool last_was_space = false;
+
+    for (char c : s) {
+        if (c == '\'') {
+            in_single_quote = !in_single_quote;
+            continue; 
+        }
+
+        if (!in_single_quote && c == ' ') {
+            if (!last_was_space) {
+                result += ' ';
+                last_was_space = true;
+            }
+        }
+        else {
+            result += c;
+            last_was_space = false;
+        }
+    }
+
+    std::cout << result << std::endl;
+}
+
+
+
 int main() {
     // Flush after every std::cout / std:cerr
     std::cout << std::unitbuf;
@@ -170,19 +225,24 @@ int main() {
             break;
         }
         else if (input.rfind("echo ", 0) == 0) {
-            std::cout << input.substr(5) << std::endl;
+            std::string cmd = input.substr(5);
+            echo_cmd(cmd);
         }
+
         else if (input.rfind("type ", 0) == 0) {
             std::string cmd = input.substr(5);
             handle_type(cmd);
         }
+
         else if(input=="pwd"){
             pwd_cmd();
         }
+
         else if(input.rfind("cd ", 0) == 0){
             std::string path = input.substr(3);
             cd_cmd(path);
         }
+
         else {
             run_program(input);
         }
