@@ -41,16 +41,27 @@ std::vector<std::string> parse_args(const std::string& input) {
     for (size_t i = 0; i < input.size(); ++i) {
         char c = input[i];
 
-        
-        if (!in_single_quote && !in_double_quote && c == '\\') {
-            if (i + 1 < input.size()) {
-                current += input[i + 1]; 
-                i++;                     
+        if(c == '\\'){
+            // Outside quotes handling : esacpe any character
+            if (!in_single_quote && !in_double_quote) {
+                if (i + 1 < input.size()) {
+                    current += input[i + 1]; 
+                    i++;                     
+                }
+                continue;
             }
-            continue;
+
+            // Inside double quotes : escape only " and \                   //
+            if(in_double_quote){
+                if(i+1 < input.size() && (input[i+1] == '"' || input[i+1] == '\\')){
+                    current += input[i + 1]; 
+                    i++;
+                    continue;
+
+                }
+            }
         }
 
-        
         if (c == '\'' && !in_double_quote) {
             in_single_quote = !in_single_quote;
             continue; 
@@ -61,7 +72,7 @@ std::vector<std::string> parse_args(const std::string& input) {
             continue; 
         }
 
-       
+        // Space handling 
         if (c == ' ' && !in_single_quote && !in_double_quote) {
             if (!current.empty()) {
                 args.push_back(current);
@@ -69,7 +80,8 @@ std::vector<std::string> parse_args(const std::string& input) {
             }
             continue;
         }
-
+        
+        // Normal character
         current += c;
     }
 
