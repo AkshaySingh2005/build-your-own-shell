@@ -70,6 +70,9 @@ struct Redir {
     std::string err_file;
     bool err_redirect = false;
 
+    bool out_append = false;
+    bool err_append = false;
+
 
 };
 
@@ -84,6 +87,13 @@ Redir split_redirection(const std::vector<std::string>& tokens) {
                 i++;
             }
         }
+        else if (tokens[i] == ">>" || tokens[i] == "1>>") {
+            if (i + 1 < tokens.size()) {
+                r.out_redirect = true;
+                r.out_append = true;
+                r.out_file = tokens[++i];
+            }
+        }        
         else if(tokens[i] == "2>"){
             if(i+1 < tokens.size()){
                 r.err_redirect = true;
@@ -91,6 +101,13 @@ Redir split_redirection(const std::vector<std::string>& tokens) {
                 i++;
             }
         }
+        else if (tokens[i] == "2>>") {
+            if (i + 1 < tokens.size()) {
+                r.err_redirect = true;
+                r.err_append = true;
+                r.err_file = tokens[++i];
+            }
+        }        
         else {
             r.args.push_back(tokens[i]);
         }
@@ -219,28 +236,28 @@ int main() {
         int saved_out = -1;
         int saved_err = -1;
 
+
         if (r.out_redirect) {
-            int fd = open(r.out_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (fd == -1){ 
-                perror("open"); 
-                continue;
-            }
+            int flags = O_WRONLY | O_CREAT | (r.out_append ? O_APPEND : O_TRUNC);
+            int fd = open(r.out_file.c_str(), flags, 0644);
+            if (fd == -1) { perror("open"); continue; }
+
             saved_out = dup(STDOUT_FILENO);
             dup2(fd, STDOUT_FILENO);
             close(fd);
         }
+
         if (r.err_redirect) {
-            int fd = open(r.err_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (fd == -1){ 
-                perror("open"); 
-                continue;
-            }
+            int flags = O_WRONLY | O_CREAT | (r.err_append ? O_APPEND : O_TRUNC);
+            int fd = open(r.err_file.c_str(), flags, 0644);
+            if (fd == -1) { perror("open"); continue; }
+
             saved_err = dup(STDERR_FILENO);
             dup2(fd, STDERR_FILENO);
             close(fd);
         }
-
-
+      
+ 
         std::string cmd = r.args[0];
 
         if (cmd == "echo") echo_cmd(r.args);
