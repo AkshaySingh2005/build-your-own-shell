@@ -10,13 +10,13 @@
 #include <limits.h>
 #include <fcntl.h>
 
-using namespace std;
+
 
 /* -------------------- Parsing -------------------- */
 
-vector<string> parse_args(const string& input) {
-    vector<string> args;
-    string cur;
+std::vector<std::string> parse_args(const std::string& input) {
+    std::vector<std::string> args;
+    std::string cur;
     bool in_single = false, in_double = false;
 
     for (size_t i = 0; i < input.size(); i++) {
@@ -62,21 +62,36 @@ vector<string> parse_args(const string& input) {
 /* -------------------- Redirection -------------------- */
 
 struct Redir {
-    vector<string> args;
-    string file;
-    bool redirect = false;
+    std::vector<std::string> args;
+
+    std::string out_file;
+    bool out_redirect = false;
+
+    std::string err_file;
+    bool err_redirect = false;
+
+
 };
 
-Redir split_redirection(const vector<string>& tokens) {
+Redir split_redirection(const std::vector<std::string>& tokens) {
     Redir r;
+
     for (size_t i = 0; i < tokens.size(); i++) {
         if (tokens[i] == ">" || tokens[i] == "1>") {
             if (i + 1 < tokens.size()) {
-                r.redirect = true;
-                r.file = tokens[i + 1];
-                break;
+                r.out_redirect = true;
+                r.out_file = tokens[i + 1];
+                i++;
             }
-        } else {
+        }
+        else if(tokens[i] == "2>"){
+            if(i+1 < tokens.size()){
+                r.err_redirect = true;
+                r.err_file = tokens[i+1];
+                i++;
+            }
+        }
+        else {
             r.args.push_back(tokens[i]);
         }
     }
@@ -85,17 +100,17 @@ Redir split_redirection(const vector<string>& tokens) {
 
 /* -------------------- Builtins -------------------- */
 
-void echo_cmd(const vector<string>& args) {
+void echo_cmd(const std::vector<std::string>& args) {
     for (size_t i = 1; i < args.size(); i++) {
-        cout << args[i];
-        if (i + 1 < args.size()) cout << " ";
+        std::cout << args[i];
+        if (i + 1 < args.size()) std::cout << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 void pwd_cmd() {
     char buf[PATH_MAX];
-    if (getcwd(buf, sizeof(buf))) cout << buf << endl;
+    if (getcwd(buf, sizeof(buf))) std::cout << buf << std::endl;
 }
 
 void cd_cmd(const std::vector<std::string>& args) {
@@ -132,41 +147,50 @@ void cd_cmd(const std::vector<std::string>& args) {
 }
 
 
-void type_cmd(const vector<string>& args) {
+void type_cmd(const std::vector<std::string>& args) {
     if (args.size() < 2) return;
-    string cmd = args[1];
+    std::string cmd = args[1];
 
     if (cmd == "echo" || cmd == "pwd" || cmd == "cd" || cmd == "type" || cmd == "exit") {
-        cout << cmd << " is a shell builtin\n";
+        std::cout << cmd << " is a shell builtin\n";
         return;
     }
 
     char* path = getenv("PATH");
-    string p(path);
-    stringstream ss(p);
-    string dir;
+    std::string p(path);
+    std::stringstream ss(p);
+    std::string dir;
+
     while (getline(ss, dir, ':')) {
-        string full = dir + "/" + cmd;
+        std::string full = dir + "/" + cmd;
         if (access(full.c_str(), X_OK) == 0) {
-            cout << cmd << " is " << full << endl;
+            std::cout << cmd << " is " << full << std::endl;
             return;
         }
     }
-    cout << cmd << ": not found\n";
+    std::cout << cmd << ": not found\n";
 }
 
 /* -------------------- External -------------------- */
 
-void run_program(const vector<string>& args) {
+void run_program(const std::vector<std::string>& args) {
+
     pid_t pid = fork();
+
     if (pid == 0) {
-        vector<char*> argv;
-        for (auto& a : args) argv.push_back(const_cast<char*>(a.c_str()));
+        std::vector<char*> argv;
+
+        for (auto& a : args){
+            argv.push_back(const_cast<char*>(a.c_str()));
+        } 
         argv.push_back(nullptr);
         execvp(argv[0], argv.data());
-        cerr << args[0] << ": command not found\n";
+
+        std::cerr << args[0] << ": command not found\n";
         _exit(1);
-    } else {
+    } 
+
+    else {
         waitpid(pid, nullptr, 0);
     }
 }
@@ -174,38 +198,70 @@ void run_program(const vector<string>& args) {
 /* -------------------- Shell -------------------- */
 
 int main() {
-    cout << unitbuf;
-    cerr << unitbuf;
+    std::cout << std::unitbuf;
+    std::cerr << std::unitbuf;
 
     while (true) {
-        cout << "$ ";
-        string input;
-        if (!getline(cin, input)) break;
+        std::cout << "$ ";
+
+        std::string input;
+
+        if (!getline(std::cin, input)) break;
+
         if (input == "exit") break;
 
         auto tokens = parse_args(input);
+
         auto r = split_redirection(tokens);
+
         if (r.args.empty()) continue;
 
-        int saved = -1;
-        if (r.redirect) {
-            int fd = open(r.file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (fd == -1) { perror("open"); continue; }
-            saved = dup(STDOUT_FILENO);
+        int saved_out = -1;
+        int saved_err = -1;
+
+        if (r.out_redirect) {
+            int fd = open(r.out_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (fd == -1){ 
+                perror("open"); 
+                continue;
+            }
+            saved_out = dup(STDOUT_FILENO);
             dup2(fd, STDOUT_FILENO);
             close(fd);
         }
+        if (r.err_redirect) {
+            int fd = open(r.err_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (fd == -1){ 
+                perror("open"); 
+                continue;
+            }
+            saved_err = dup(STDERR_FILENO);
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+        }
 
-        string cmd = r.args[0];
+
+        std::string cmd = r.args[0];
+
         if (cmd == "echo") echo_cmd(r.args);
+
         else if (cmd == "pwd") pwd_cmd();
+
         else if (cmd == "cd") cd_cmd(r.args);
+
         else if (cmd == "type") type_cmd(r.args);
+        
         else run_program(r.args);
 
-        if (saved != -1) {
-            dup2(saved, STDOUT_FILENO);
-            close(saved);
+        if (saved_out != -1) {
+            dup2(saved_out, STDOUT_FILENO);
+            close(saved_out);
         }
+
+        if (saved_err != -1) {
+            dup2(saved_err, STDERR_FILENO);
+            close(saved_err);
+        }
+
     }
 }
