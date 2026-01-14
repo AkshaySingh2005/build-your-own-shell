@@ -9,6 +9,10 @@
 #include <errno.h>
 #include <limits.h>
 #include <fcntl.h>
+#include "completion.h"
+#include <readline/readline.h>
+#include <readline/history.h>
+
 
 
 
@@ -72,8 +76,6 @@ struct Redir {
 
     bool out_append = false;
     bool err_append = false;
-
-
 };
 
 Redir split_redirection(const std::vector<std::string>& tokens) {
@@ -218,12 +220,22 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+    setup_readline();
+
+
     while (true) {
-        std::cout << "$ ";
+        // std::cout << "$ ";
+        // std::string input;
+        // if (!getline(std::cin, input)) break;
 
-        std::string input;
+        char* raw = readline("$ ");
+        if (!raw) break;
 
-        if (!getline(std::cin, input)) break;
+        std::string input(raw);
+        free(raw);
+
+        if (!input.empty())
+            add_history(input.c_str());
 
         if (input == "exit") break;
 
