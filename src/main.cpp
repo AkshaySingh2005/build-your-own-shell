@@ -191,34 +191,36 @@ void type_cmd(const std::vector<std::string>& args) {
 }
 
 void history_cmd(const std::vector<std::string>& args) {
-
     HIST_ENTRY** hist = history_list();
-
     if (!hist) return;
-    
-    if(std::stoi(args[1])){
-       int n = stoi(args[1]);
 
-       for(int i=0;i<n;i++){
-           std::cout << i + 1 << "  " << hist[i]->line << "\n";
-       }
+    int count = history_length;
+
+  
+    if (args.size() == 1) {
+        for (int i = 0; i < count; i++) {
+            std::cout << i + 1 << "  " << hist[i]->line << "\n";
+        }
+        return;
     }
 
-    if(args.size()==1){
-       for (int i = 0; hist[i]; i++) {
-           std::cout << i + 1 << "  " << hist[i]->line << "\n";
-       }
+    int n = 0;
+    try {
+        n = std::stoi(args[1]);
+    } catch (...) {
+        return;
     }
 
-    
+    if (n <= 0) return;
 
-    
+    int start = count - n;
+    if (start < 0) start = 0;
 
-    
-
-
-
+    for (int i = start; i < count; i++) {
+        std::cout << i + 1 << "  " << hist[i]->line << "\n";
+    }
 }
+
 
 
 
