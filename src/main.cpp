@@ -170,7 +170,7 @@ void type_cmd(const std::vector<std::string>& args) {
     if (args.size() < 2) return;
     std::string cmd = args[1];
 
-    if (cmd == "echo" || cmd == "pwd" || cmd == "cd" || cmd == "type" || cmd == "exit") {
+    if (cmd == "echo" || cmd == "pwd" || cmd == "cd" || cmd == "type" || cmd == "exit" || cmd == "history") {
         std::cout << cmd << " is a shell builtin\n";
         return;
     }
