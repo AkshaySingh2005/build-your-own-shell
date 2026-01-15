@@ -190,6 +190,18 @@ void type_cmd(const std::vector<std::string>& args) {
     std::cout << cmd << ": not found\n";
 }
 
+void history_cmd() {
+    HIST_ENTRY** hist = history_list();
+
+    if (!hist) return;
+
+    for (int i = 0; hist[i]; i++) {
+        std::cout << i + 1 << "  " << hist[i]->line << "\n";
+    }
+}
+
+
+
 /* -------------------- External -------------------- */
 
 void run_program(const std::vector<std::string>& args) {
@@ -213,6 +225,8 @@ void run_program(const std::vector<std::string>& args) {
         waitpid(pid, nullptr, 0);
     }
 }
+
+
 
 /* -------------------- Shell -------------------- */
 
@@ -279,6 +293,8 @@ int main() {
         else if (cmd == "cd") cd_cmd(r.args);
 
         else if (cmd == "type") type_cmd(r.args);
+
+        else if(cmd == "history") history_cmd();
         
         else run_program(r.args);
 
