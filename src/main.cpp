@@ -190,14 +190,34 @@ void type_cmd(const std::vector<std::string>& args) {
     std::cout << cmd << ": not found\n";
 }
 
-void history_cmd() {
+void history_cmd(const std::vector<std::string>& args) {
+
     HIST_ENTRY** hist = history_list();
 
     if (!hist) return;
+    
+    if(std::stoi(args[1])){
+       int n = stoi(args[1]);
 
-    for (int i = 0; hist[i]; i++) {
-        std::cout << i + 1 << "  " << hist[i]->line << "\n";
+       for(int i=0;i<n;i++){
+           std::cout << i + 1 << "  " << hist[i]->line << "\n";
+       }
     }
+
+    if(args.size()==1){
+       for (int i = 0; hist[i]; i++) {
+           std::cout << i + 1 << "  " << hist[i]->line << "\n";
+       }
+    }
+
+    
+
+    
+
+    
+
+
+
 }
 
 
@@ -294,7 +314,7 @@ int main() {
 
         else if (cmd == "type") type_cmd(r.args);
 
-        else if(cmd == "history") history_cmd();
+        else if(cmd == "history") history_cmd(r.args);
         
         else run_program(r.args);
 
