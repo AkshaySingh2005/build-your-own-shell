@@ -1,34 +1,33 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/25918ddb-031f-478a-b19a-54d654a4d55c)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Shell 
 
-This is a starting point for C++ solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+A minimal shell implementation in C++23 with line editing via GNU Readline. Built with CMake .
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+## Requirements
+- CMake ≥ 3.13
+- A C++ compiler with C++23 support (e.g., g++ 13+, clang 16+)
+- GNU Readline development headers
+	- Ubuntu/Debian: `sudo apt-get install build-essential cmake libreadline-dev`
+	- Arch: `sudo pacman -S base-devel cmake readline`
+	- Fedora: `sudo dnf install gcc-c++ cmake readline-devel`
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
-
-# Passing the first stage
-
-The entry point for your `shell` implementation is in `src/main.cpp`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
-
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+## Build
+```bash
+cmake -B build -S .
+cmake --build build
 ```
 
-Time to move on to the next stage!
+## Run
+```bash
+./build/shell
+```
 
-# Stage 2 & beyond
+## Project Layout
+- [src/](src): Shell source files
+- [CMakeLists.txt](CMakeLists.txt): Build configuration
+- [.gitignore](.gitignore): Ignore build outputs and editor files
+- [.gitattributes](.gitattributes): Optional git attributes
 
-Note: This section is for stages 2 and beyond.
+## Notes
+- The target links against `readline` (`target_link_libraries(shell PRIVATE readline)` in [CMakeLists.txt](CMakeLists.txt)). Ensure the dev package is installed.
+- If you prefer vcpkg, you can add it later; this repository uses plain CMake by default.
 
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.cpp`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.

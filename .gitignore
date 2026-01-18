@@ -207,6 +207,7 @@ vc_hdrs.h
 
 ##### SVN
 .svn/
+/build/
 
 ##### Mercurial
 .hg/
